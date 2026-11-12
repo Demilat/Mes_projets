@@ -65,6 +65,16 @@ fi
 # est défini dans les variables de l'environnement cloud.
 [[ -x $CHS_LINK ]] && export HYPERFRAMES_BROWSER_PATH=$CHS_LINK
 
+echo "==> Démon Docker (rendus HyperFrames dans Docker)"
+# `service docker start` échoue dans le conteneur cloud (ulimit interdit) :
+# on lance dockerd directement, détaché. Non bloquant.
+if command -v dockerd >/dev/null && ! docker info >/dev/null 2>&1; then
+  setsid nohup dockerd >/var/log/dockerd.log 2>&1 < /dev/null &
+  for _ in $(seq 1 30); do docker info >/dev/null 2>&1 && break; sleep 1; done
+  docker info >/dev/null 2>&1 \
+    || echo "   (dockerd n'a pas démarré : voir /var/log/dockerd.log)"
+fi
+
 echo "==> Diagnostic"
 npx -y hyperframes doctor || true
 echo "Terminé."
